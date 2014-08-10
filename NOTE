@@ -1,0 +1,15 @@
+## Format 
+````
+cd x-stream/format/tools
+python snap2type_1.py <snap format file> <x_streamf format file>
+````
+
+
+## Run
+````
+sudo benchmark_driver -p 8 -a -b pagerank -g twitter_rv --physical_memory 8589934592
+````
+
+Notice : 
+* the .ini file, option <name> should be the name not abs path.
+* benchmark_driver should be run in super user mode, because x-stream uses "mlock".
