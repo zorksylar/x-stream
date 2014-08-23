@@ -15,6 +15,12 @@ if measure_scatter_gather:
 sudo benchmark_driver -p 8 -a -b pagerank  --measure_scatter_gather -g twitter_rv --physical_memory 8589934592
 ````
 
+if want io to be compressed : 
+````
+sudo benchmark_driver -p 8 -a -b pagerank  --measure_scatter_gather --compressed_io -g twitter_rv --physical_memory 8589934592
+````
+
+
 Notice : 
 * the .ini file, option <name> should be the name not abs path.
 * benchmark_driver should be run in super user mode, because x-stream uses "mlock".
