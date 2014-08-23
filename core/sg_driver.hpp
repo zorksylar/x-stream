@@ -85,6 +85,7 @@ namespace algorithm {
     rtc_clock state_iter_cost;
     rtc_clock scatter_cost;
     rtc_clock gather_cost;
+    rtc_clock edge_split_cost;
 
   public:
     scatter_gather();
@@ -253,11 +254,13 @@ namespace algorithm {
     // Edge split
     if(config->super_partitions > 1) {
       sg_pcpu::current_step = phase_edge_split;
+      edge_split_cost.start();
       x_lib::do_stream< scatter_gather<A, F>, 
 			edge_type_wrapper<F>, 
 			edge_type_wrapper<F> >
 	(graph_storage, 0, init_stream, edge_stream, NULL);
       graph_storage->close_stream(init_stream);
+      edge_split_cost.stop();
     }
     // Supersteps
     unsigned long PHASE = 0;
@@ -358,6 +361,7 @@ namespace algorithm {
     wall_clock.stop();
     BOOST_LOG_TRIVIAL(info) << "CORE::PHASES " << sg_pcpu::bsp_phase;
     setup_time.print("CORE::TIME::SETUP");
+    edge_split_cost.print("CORE::TIME::EDGE_SPLIT");
     if(measure_scatter_gather) {
       state_iter_cost.print("CORE::TIME::STATE_ITER");
       gather_cost.print("CORE::TIME::GATHER");
