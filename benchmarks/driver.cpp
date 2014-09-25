@@ -42,8 +42,8 @@
 #include "../algorithms/cc/cc.hpp"
 #include "../algorithms/cc/cc_online.hpp"
 // Uncomment for ALS
-//#include "../algorithms/als/als.hpp"
-//#include "../algorithms/als/als_async.hpp"
+#include "../algorithms/als/als.hpp"
+#include "../algorithms/als/als_async.hpp"
 //
 #include "../algorithms/als/checkbip.hpp"
 #include "../algorithms/mis/mis.hpp"
@@ -119,8 +119,8 @@ int main(int argc, const char* argv[])
   ADD_ALGORITHM(cc_online, algorithm::cc_online_ns::cc_online, 1, false);
   ADD_ALGORITHM(cc_online, algorithm::cc_online_ns::cc_online, 2, false);
   // Uncomment for ALS
-  //ADD_SG_ALGORITHM(als, algorithm::sg_simple::als_factorization, 1, false);
-  //ADD_SGASYNC_ALGORITHM(als_async, algorithm::sg_simple::als_async_factorization, 1, false);
+  ADD_SG_ALGORITHM(als, algorithm::sg_simple::als_factorization, 1, false);
+  ADD_SGASYNC_ALGORITHM(als_async, algorithm::sg_simple::als_async_factorization, 1, false);
   //
   ADD_SG_ALGORITHM(checkbip, algorithm::sg_simple::check_if_bipartite, 1, false);
   ADD_SG_ALGORITHM(mis, algorithm::sg_simple::mis, 1, false);

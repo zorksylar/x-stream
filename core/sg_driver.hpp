@@ -21,6 +21,7 @@
 #include<sys/time.h>
 #include<sys/resource.h>
 #include "x-lib.hpp"
+#include<profiler.h>
 
 
 // Implement a wrapper for simpler graph algorithms that alternate between
@@ -250,6 +251,7 @@ namespace algorithm {
   template<typename A, typename F>
   void scatter_gather<A, F>::operator() ()
   {
+    ProfilerStart("x-stream.prof");
     const x_lib::configuration *config = graph_storage->get_config();
     // Edge split
     if(config->super_partitions > 1) {
@@ -368,6 +370,7 @@ namespace algorithm {
       scatter_cost.print("CORE::TIME::SCATTER");
     }
     wall_clock.print("CORE::TIME::WALL");
+    ProfilerStop();
   }
 
   template<typename A, typename F>

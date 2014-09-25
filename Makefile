@@ -36,8 +36,11 @@ CXXFLAGS += -msse4.2
 
 #System libraries
 SYSLIBS = -lboost_system -lboost_program_options -lboost_thread -lz -lrt
+# User google perf tools
+SYSLIBS += -lprofiler
+EXTRA_INCLUDES+=-I/usr/include/google
 # Uncomment for ALS
-#SYSLIBS += -llapack
+SYSLIBS += -llapack
 
 #Python support (uncomment following lines)
 #CXXFLAGS += -DPYTHON_SUPPORT
