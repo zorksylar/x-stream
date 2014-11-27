@@ -65,28 +65,28 @@ namespace x_lib {
     memory_buffer *state_buffer;
     unsigned long superp;
     void operator() (unsigned long processor_id,
-		     configuration *config,
-		     x_barrier *sync,
-		     algorithm::per_processor_data *cpu_state,
-		     unsigned char *outbuf)
+                     configuration *config,
+                     x_barrier *sync,
+                     algorithm::per_processor_data *cpu_state,
+                     unsigned char *outbuf)
     {
       unsigned long partitions_per_cpu =
-	config->cached_partitions/config->processors;
+        config->cached_partitions/config->processors;
       unsigned long remainder = config->cached_partitions - 
-	partitions_per_cpu*config->processors;
+        partitions_per_cpu*config->processors;
       unsigned long start = partitions_per_cpu*processor_id;
       unsigned long count = partitions_per_cpu;
       if(processor_id == (config->processors - 1)) {
-	count += remainder;
+        count += remainder;
       }
       unsigned long i,j,k;
       for(i=start,j=0;j<count;i++,j++) {
-	unsigned long vertices = config->state_count(superp, i);
-	for(k=0;k<vertices;k++) {
-	  unsigned char * vertex =
-	    &state_buffer->buffer[state_buffer->index[0][i] + k*config->vertex_size];
-	  A::state_iter_callback(superp, i, k, vertex, cpu_state);   
-	}
+        unsigned long vertices = config->state_count(superp, i);
+        for(k=0;k<vertices;k++) {
+          unsigned char * vertex =
+            &state_buffer->buffer[state_buffer->index[0][i] + k*config->vertex_size];
+          A::state_iter_callback(superp, i, k, vertex, cpu_state);   
+        }
       }
     }
   } __attribute__((__aligned__(64)));
@@ -105,148 +105,148 @@ namespace x_lib {
     bool loopback;
 
     bool flush_buffer(unsigned long processor_id, 
-		      configuration *config,
-		      x_barrier *sync,
-		      algorithm::per_processor_data *cpu_state)
+                      configuration *config,
+                      x_barrier *sync,
+                      algorithm::per_processor_data *cpu_state)
     {
       memory_buffer *loopback_buffer = stream_out;
       bool empty = false;
       sync->wait();
       if(stream_out->bufsize > 0) {
-	make_index<OUT, map_super_partition_wrap>(stream_out, processor_id,
-						  config->super_partitions,
-						  sync);
-	if(processor_id == 0) {
-	  if(loopback) {
-	    // IO only if more than one superpartition
-	    if(config->super_partitions > 1) {
-	      // Hold on for looping back on current superpartition
-	      loopback_buffer->skip_superp = superp;
-	      loopback_buffer->set_refcount(loopback_buffer->get_refcount() + 1);
-	      io_clock->start();
-	      disk_stream_out->append(stream_out);
-	      io_clock->stop();
-	    }
-	  }
-	  else {
-	    io_clock->start();
-	    disk_stream_out->append(stream_out);
-	    io_clock->stop();
-	  }
-	  stream_out = NULL;
-	}
-	if(loopback) {
-	  if(processor_id == 0) {
-	    stream_out = bufm->get_buffer();
-	  }
-	  sync->wait();
-	  unsigned long loopback_bytes;
-	  unsigned char *loopback_src   = 
-	    loopback_buffer->get_substream(processor_id, superp, &loopback_bytes);
-	  unsigned long offset_start;
-	  unsigned long offset_stop;
-	  do {
-	    offset_start = stream_out->bufsize;
-	    offset_stop = offset_start + loopback_bytes;
-	  } while (!__sync_bool_compare_and_swap(&stream_out->bufsize, 
-						 offset_start,
-						 offset_stop));
-	  memcpy(stream_out->buffer + offset_start, loopback_src,
-		 loopback_bytes);
-	  sync->wait();
-	  make_index<OUT, map_cached_partition_wrap >
-	    (stream_out, processor_id, config->cached_partitions, sync);
-	  stream_callback_state callback_state;
-	  callback_state.superp = superp;
-	  callback_state.bytes_out_max = 0;
-	  callback_state.cpu_state = cpu_state;
-	  callback_state.loopback  = true;
-	  sync->wait();
-	  stream_out->work_queues->prep_dq(processor_id);
-	  sync->wait();
-	  unsigned long partition_id;
-	  while((partition_id = stream_out->work_queues->dq(processor_id)) != ULONG_MAX) {
-	    callback_state.state = &state->buffer[state->index[0][partition_id]];
-	    callback_state.partition_id = partition_id;
-	    A::partition_pre_callback(superp, partition_id, cpu_state);
-	    for(unsigned long i=0;i<config->processors;i++) {
-	      callback_state.bufin = 
-		stream_out->get_substream(i, partition_id,
-					  &callback_state.bytes_in);
-	      callback_state.bufout = NULL; // No output allowed in loopback
+        make_index<OUT, map_super_partition_wrap>(stream_out, processor_id,
+                                                  config->super_partitions,
+                                                  sync);
+        if(processor_id == 0) {
+          if(loopback) {
+            // IO only if more than one superpartition
+            if(config->super_partitions > 1) {
+              // Hold on for looping back on current superpartition
+              loopback_buffer->skip_superp = superp;
+              loopback_buffer->set_refcount(loopback_buffer->get_refcount() + 1);
+              io_clock->start();
+              disk_stream_out->append(stream_out);
+              io_clock->stop();
+            }
+          }
+          else {
+            io_clock->start();
+            disk_stream_out->append(stream_out);
+            io_clock->stop();
+          }
+          stream_out = NULL;
+        }
+        if(loopback) {
+          if(processor_id == 0) {
+            stream_out = bufm->get_buffer();
+          }
+          sync->wait();
+          unsigned long loopback_bytes;
+          unsigned char *loopback_src   = 
+            loopback_buffer->get_substream(processor_id, superp, &loopback_bytes);
+          unsigned long offset_start;
+          unsigned long offset_stop;
+          do {
+            offset_start = stream_out->bufsize;
+            offset_stop = offset_start + loopback_bytes;
+          } while (!__sync_bool_compare_and_swap(&stream_out->bufsize, 
+                                                 offset_start,
+                                                 offset_stop));
+          memcpy(stream_out->buffer + offset_start, loopback_src,
+                 loopback_bytes);
+          sync->wait();
+          make_index<OUT, map_cached_partition_wrap >
+            (stream_out, processor_id, config->cached_partitions, sync);
+          stream_callback_state callback_state;
+          callback_state.superp = superp;
+          callback_state.bytes_out_max = 0;
+          callback_state.cpu_state = cpu_state;
+          callback_state.loopback  = true;
+          sync->wait();
+          stream_out->work_queues->prep_dq(processor_id);
+          sync->wait();
+          unsigned long partition_id;
+          while((partition_id = stream_out->work_queues->dq(processor_id)) != ULONG_MAX) {
+            callback_state.state = &state->buffer[state->index[0][partition_id]];
+            callback_state.partition_id = partition_id;
+            A::partition_pre_callback(superp, partition_id, cpu_state);
+            for(unsigned long i=0;i<config->processors;i++) {
+              callback_state.bufin = 
+                stream_out->get_substream(i, partition_id,
+                                          &callback_state.bytes_in);
+              callback_state.bufout = NULL; // No output allowed in loopback
 #ifdef PYTHON_SUPPORT
-	      callback_state.pbufin        = stream_out->pBuffer;
-	      callback_state.pbufin_offset = callback_state.bufin - stream_out->buffer;
-	      callback_state.pstate        = state->pBuffer;
-	      callback_state.pstate_offset = callback_state.state - state->buffer;
+              callback_state.pbufin        = stream_out->pBuffer;
+              callback_state.pbufin_offset = callback_state.bufin - stream_out->buffer;
+              callback_state.pstate        = state->pBuffer;
+              callback_state.pstate_offset = callback_state.state - state->buffer;
 #endif
-	      A::partition_callback(&callback_state);
-	    }
-	    A::partition_post_callback(superp, partition_id, cpu_state);
-	  }
-	  sync->wait();
-	  if(processor_id == 0) {
-	    loopback_buffer->set_refcount(loopback_buffer->get_refcount() - 1);
-	    stream_out->set_refcount(stream_out->get_refcount() - 1);
-	    stream_out = NULL;
-	  }
-	}
-	if(processor_id == 0) {
-	  stream_out = bufm->get_buffer();
-	}
+              A::partition_callback(&callback_state);
+            }
+            A::partition_post_callback(superp, partition_id, cpu_state);
+          }
+          sync->wait();
+          if(processor_id == 0) {
+            loopback_buffer->set_refcount(loopback_buffer->get_refcount() - 1);
+            stream_out->set_refcount(stream_out->get_refcount() - 1);
+            stream_out = NULL;
+          }
+        }
+        if(processor_id == 0) {
+          stream_out = bufm->get_buffer();
+        }
       }
       else {
-	empty = true;
+        empty = true;
       }
       sync->wait();
       return empty;
     }
 
     void final_flush(unsigned long processor_id, 
-		     configuration *config,
-		     x_barrier *sync, 
-		     algorithm::per_processor_data *cpu_state)
+                     configuration *config,
+                     x_barrier *sync, 
+                     algorithm::per_processor_data *cpu_state)
     {
       bool empty;
       do {
-	empty = flush_buffer(processor_id, config, sync, cpu_state);
+        empty = flush_buffer(processor_id, config, sync, cpu_state);
       } while(!empty);
       sync->wait();
       if(processor_id == 0) {
-	stream_out->set_refcount(stream_out->get_refcount() - 1);
+        stream_out->set_refcount(stream_out->get_refcount() - 1);
       }
     }
 
     void append_buffer(unsigned char *buffer, unsigned long bytes,
-		       unsigned long processor_id, configuration *config,
-		       x_barrier *sync, algorithm::per_processor_data *cpu_state)
+                       unsigned long processor_id, configuration *config,
+                       x_barrier *sync, algorithm::per_processor_data *cpu_state)
     {
       while(bytes) {
-	unsigned char *base  = stream_out->buffer;
-	unsigned long offset_start = stream_out->bufsize;
-	unsigned long space = 	  
-	  (MIN(stream_out->bufbytes - offset_start, bytes)
-	   /OUT::item_size())*OUT::item_size();
-	unsigned long offset_stop = offset_start + space;
-	if(__sync_bool_compare_and_swap(&stream_out->bufsize, 
-					offset_start,
-					offset_stop)) {
-	  memcpy(base + offset_start, buffer, space);
-	  if(space != bytes) { // Need flush
-	    (void)flush_buffer(processor_id, config, sync, cpu_state);
-	  }
-	  bytes  -= space;
-	  buffer += space;
-	}
+        unsigned char *base  = stream_out->buffer;
+        unsigned long offset_start = stream_out->bufsize;
+        unsigned long space =           
+          (MIN(stream_out->bufbytes - offset_start, bytes)
+           /OUT::item_size())*OUT::item_size();
+        unsigned long offset_stop = offset_start + space;
+        if(__sync_bool_compare_and_swap(&stream_out->bufsize, 
+                                        offset_start,
+                                        offset_stop)) {
+          memcpy(base + offset_start, buffer, space);
+          if(space != bytes) { // Need flush
+            (void)flush_buffer(processor_id, config, sync, cpu_state);
+          }
+          bytes  -= space;
+          buffer += space;
+        }
       }
     }
 
     void execute_callback(stream_callback_state *callback,
-			  unsigned long processor_id,
-			  configuration *config,
-			  x_barrier *sync,
-			  algorithm::per_processor_data *cpu_state,
-			  unsigned char *outbuf)
+                          unsigned long processor_id,
+                          configuration *config,
+                          x_barrier *sync,
+                          algorithm::per_processor_data *cpu_state,
+                          unsigned char *outbuf)
     {
       callback->bufout = outbuf;
       callback->bytes_out = 0;
@@ -259,14 +259,14 @@ namespace x_lib {
       callback->pstate_offset = callback->state - state->buffer;
 #endif
       while(callback->bytes_in) {
-	A::partition_callback(callback);
-	if(stream_out != NULL && callback->bytes_out > 0) {
-	  append_buffer(outbuf, callback->bytes_out,
-			processor_id, config, sync,
-			cpu_state);
-	  callback->bufout = outbuf;
-	  callback->bytes_out = 0;
-	}
+        A::partition_callback(callback);
+        if(stream_out != NULL && callback->bytes_out > 0) {
+          append_buffer(outbuf, callback->bytes_out,
+                        processor_id, config, sync,
+                        cpu_state);
+          callback->bufout = outbuf;
+          callback->bytes_out = 0;
+        }
       }
 #ifdef PYTHON_SUPPORT
       Py_DECREF(callback->pbufout);
@@ -274,88 +274,88 @@ namespace x_lib {
     }
 
     void operator() (unsigned long processor_id,
-		     configuration *config,
-		     x_barrier *sync, 
-		     algorithm::per_processor_data *cpu_state,
-		     unsigned char *outbuf)
+                     configuration *config,
+                     x_barrier *sync, 
+                     algorithm::per_processor_data *cpu_state,
+                     unsigned char *outbuf)
     {
       if(stream_in == NULL && stream_out == NULL) {
-	A::do_cpu_callback(cpu_state);
-	return;
+        A::do_cpu_callback(cpu_state);
+        return;
       }
       stream_callback_state callback_state;
       callback_state.superp = superp;
       callback_state.bytes_out_max =
-	(OUTBUF_SIZE/OUT::item_size())*OUT::item_size();
+        (OUTBUF_SIZE/OUT::item_size())*OUT::item_size();
       callback_state.cpu_state = cpu_state;
       callback_state.loopback  = false;
       // Must play ingest first
       if(ingest != NULL) {
-	sync->wait();
-	callback_state.ingest = true;
-	make_index<IN, map_super_partition_wrap>(ingest, processor_id,
-						 config->super_partitions,
-						 sync);
-	unsigned long ingest_bytes;
-	unsigned char *ingest_src   = 
-	  ingest->get_substream(processor_id, superp, &ingest_bytes);
-	unsigned long offset_start;
-	unsigned long offset_stop;
-	do {
-	  offset_start = stream_in->bufsize;
-	  offset_stop = offset_start + ingest_bytes;
-	} while (!__sync_bool_compare_and_swap(&stream_in->bufsize, 
-					       offset_start,
-					       offset_stop));
-	memcpy(stream_in->buffer + offset_start, 
-	       ingest_src,
-	       ingest_bytes);
-	sync->wait();
-	if(processor_id == 0) {
-	  BOOST_ASSERT_MSG(stream_in->bufsize == ingest->bufsize,
-			   "Error in partitioning ingest !");
-	  ingest = NULL;
-	}
+        sync->wait();
+        callback_state.ingest = true;
+        make_index<IN, map_super_partition_wrap>(ingest, processor_id,
+                                                 config->super_partitions,
+                                                 sync);
+        unsigned long ingest_bytes;
+        unsigned char *ingest_src   = 
+          ingest->get_substream(processor_id, superp, &ingest_bytes);
+        unsigned long offset_start;
+        unsigned long offset_stop;
+        do {
+          offset_start = stream_in->bufsize;
+          offset_stop = offset_start + ingest_bytes;
+        } while (!__sync_bool_compare_and_swap(&stream_in->bufsize, 
+                                               offset_start,
+                                               offset_stop));
+        memcpy(stream_in->buffer + offset_start, 
+               ingest_src,
+               ingest_bytes);
+        sync->wait();
+        if(processor_id == 0) {
+          BOOST_ASSERT_MSG(stream_in->bufsize == ingest->bufsize,
+                           "Error in partitioning ingest !");
+          ingest = NULL;
+        }
       }
       else {
-	callback_state.ingest = false;
+        callback_state.ingest = false;
       }
       if(stream_in != NULL) {
-	make_index<IN, map_cached_partition_wrap >
-	  (stream_in, processor_id, config->cached_partitions, sync);
+        make_index<IN, map_cached_partition_wrap >
+          (stream_in, processor_id, config->cached_partitions, sync);
       }
       sync->wait();
       input_filter->prep_dq(processor_id);
       sync->wait();
       unsigned long partition_id;
       while((partition_id = input_filter->dq(processor_id)) != ULONG_MAX) {
-	callback_state.state = &state->buffer[state->index[0][partition_id]];
-	callback_state.partition_id = partition_id;
-	A::partition_pre_callback(superp, partition_id, cpu_state);
-	if(stream_in != NULL) {
-	  for(unsigned long i=0;i<config->processors;i++) {
-	    callback_state.bufin = 
-	      stream_in->get_substream(i, partition_id,
-				       &callback_state.bytes_in);
-	    execute_callback(&callback_state, 
-			     processor_id, 
-			     config, 
-			     sync, 
-			     cpu_state,
-			     outbuf);
-	  }
-	}
-	else {
-	  callback_state.bufin    = callback_state.state;
-	  callback_state.bytes_in = 
-	    config->vertex_size*config->state_count(superp, partition_id);
-	  execute_callback(&callback_state, processor_id, config, sync,
-			   cpu_state, outbuf);
-	}
-	A::partition_post_callback(superp, partition_id, cpu_state);
+        callback_state.state = &state->buffer[state->index[0][partition_id]];
+        callback_state.partition_id = partition_id;
+        A::partition_pre_callback(superp, partition_id, cpu_state);
+        if(stream_in != NULL) {
+          for(unsigned long i=0;i<config->processors;i++) {
+            callback_state.bufin = 
+              stream_in->get_substream(i, partition_id,
+                                       &callback_state.bytes_in);
+            execute_callback(&callback_state, 
+                             processor_id, 
+                             config, 
+                             sync, 
+                             cpu_state,
+                             outbuf);
+          }
+        }
+        else {
+          callback_state.bufin    = callback_state.state;
+          callback_state.bytes_in = 
+            config->vertex_size*config->state_count(superp, partition_id);
+          execute_callback(&callback_state, processor_id, config, sync,
+                           cpu_state, outbuf);
+        }
+        A::partition_post_callback(superp, partition_id, cpu_state);
       }
       if(stream_out != NULL) {
-	final_flush(processor_id, config, sync, cpu_state);
+        final_flush(processor_id, config, sync, cpu_state);
       }
     }
   } __attribute__((aligned(64)));
@@ -372,14 +372,14 @@ namespace x_lib {
     unsigned char *outbuf;
 
     x_thread(struct configuration* config_in,
-	     unsigned long processor_id_in,
-	     algorithm::per_processor_data *cpu_state_in)
+             unsigned long processor_id_in,
+             algorithm::per_processor_data *cpu_state_in)
       :config(config_in),
        cpu_state(cpu_state_in),
        processor_id(processor_id_in)
     {
       if(sync == NULL) { // First object
-	sync = new x_barrier(config->processors);
+        sync = new x_barrier(config->processors);
       }
       outbuf = (unsigned char *)map_anon_memory(OUTBUF_SIZE, true, "thread outbuf");
     }
@@ -387,14 +387,14 @@ namespace x_lib {
     void operator() ()
     {
       do {
-	sync->wait();
-	if(terminate) {
-	  break;
-	}
-	else {
-	  (*work_to_do)(processor_id, config, sync, cpu_state, outbuf);
-	  sync->wait(); // Must synchronize before p0 exits (object is on stack)
-	}
+        sync->wait();
+        if(terminate) {
+          break;
+        }
+        else {
+          (*work_to_do)(processor_id, config, sync, cpu_state, outbuf);
+          sync->wait(); // Must synchronize before p0 exits (object is on stack)
+        }
       }while(processor_id != 0);
     }
     friend class stream_IO;
@@ -433,20 +433,20 @@ namespace x_lib {
       config->ioq_object_size = sizeof(ioq);
       config->vertex_size = A::vertex_state_bytes();
       config->vertex_footprint = config->vertex_size + 
-		A::vertex_stream_buffer_bytes();
+                A::vertex_stream_buffer_bytes();
       config->max_streams = A::max_streams();
       config->max_buffers = A::max_buffers();
       config->init();
       if(vm.count("autotune") > 0) {
-	bool success = config->autotune();
-	if(!success) {
-	  BOOST_LOG_TRIVIAL(fatal) << "Auto-tuning failed !";
-	  config->dump_config();
-	  exit(-1);
-	}
+        bool success = config->autotune();
+        if(!success) {
+          BOOST_LOG_TRIVIAL(fatal) << "Auto-tuning failed !";
+          config->dump_config();
+          exit(-1);
+        }
       }
       else {
-	config->manual();
+        config->manual();
       }
       config->dump_config();
       /* Sanity checks */
@@ -462,26 +462,26 @@ namespace x_lib {
       config = new struct configuration();
       make_config();
       buffers = new buffer_manager(config, 
-				   config->buffer_size,
-				   config->max_buffers);
+                                   config->buffer_size,
+                                   config->max_buffers);
       state_buffer = new memory_buffer(config,
-				       config->max_state_bufsize());
+                                       config->max_state_bufsize());
       startup_ioqs(config);
       streams        = new disk_stream *[config->max_streams];
       ingest_buffers = new memory_buffer *[config->max_streams]; 
       for(unsigned long i=0;i<config->max_streams;i++) {
-	streams[i] = NULL;
-	ingest_buffers[i] = 0;
+        streams[i] = NULL;
+        ingest_buffers[i] = 0;
       }      
       workers = new x_thread* [config->processors];
       thread_array = new boost::thread* [config->processors];
       cpu_state_array = new algorithm::per_processor_data* [config->processors];
       for(unsigned long i=0;i<config->processors;i++) {
-	cpu_state_array[i] = A::create_per_processor_data(i);
-	workers[i] = new x_thread(config, i, cpu_state_array[i]);
-	if(i > 0) {
-	  thread_array[i] = new boost::thread(boost::ref(*workers[i]));
-	}
+        cpu_state_array[i] = A::create_per_processor_data(i);
+        workers[i] = new x_thread(config, i, cpu_state_array[i]);
+        if(i > 0) {
+          thread_array[i] = new boost::thread(boost::ref(*workers[i]));
+        }
       }
     }
     
@@ -491,34 +491,34 @@ namespace x_lib {
     }
 
     unsigned long open_stream(const char *stream_name,
-			      bool new_file,
-			      unsigned long io_queue_number,
-			      unsigned long stream_unit,
-			      unsigned long override_superp_cnt = ULONG_MAX)
+                              bool new_file,
+                              unsigned long io_queue_number,
+                              unsigned long stream_unit,
+                              unsigned long override_superp_cnt = ULONG_MAX)
     {
       unsigned long stream_id;
       for(stream_id=0;stream_id<config->max_streams;stream_id++){
-	if(streams[stream_id] == NULL) {
-	  break;
-	}
+        if(streams[stream_id] == NULL) {
+          break;
+        }
       }
       if(stream_id == config->max_streams) {
-	BOOST_LOG_TRIVIAL(fatal) << "Exceeded max streams !";
-	exit(-1);
+        BOOST_LOG_TRIVIAL(fatal) << "Exceeded max streams !";
+        exit(-1);
       }
       if(io_queue_number >= config->num_ioqs) {
-	BOOST_LOG_TRIVIAL(fatal) << "Trying to access non-existent disk!";
-	exit(-1);
+        BOOST_LOG_TRIVIAL(fatal) << "Trying to access non-existent disk!";
+        exit(-1);
       }
       streams[stream_id] = 
-	new disk_stream(stream_name, new_file, 
-			vm.count("compressed_io") > 0,
-			disk_ioq_array[io_queue_number],
-			buffers, 
-			override_superp_cnt == ULONG_MAX ?
-			config->super_partitions:override_superp_cnt,
-			stream_unit,
-			config->stream_unit);
+        new disk_stream(stream_name, new_file, 
+                        vm.count("compressed_io") > 0,
+                        disk_ioq_array[io_queue_number],
+                        buffers, 
+                        override_superp_cnt == ULONG_MAX ?
+                        config->super_partitions:override_superp_cnt,
+                        stream_unit,
+                        config->stream_unit);
       return stream_id;
     }
     
@@ -545,9 +545,9 @@ namespace x_lib {
       /* Setup pmap */
       unsigned long v_so_far = 0;
       for(unsigned long i=0;i<config->cached_partitions;i++) {
-	//Count entries in the partition
-	state_buffer->index[0][i] = v_so_far;
-	v_so_far += config->vertex_size*config->state_count(superp, i);
+        //Count entries in the partition
+        state_buffer->index[0][i] = v_so_far;
+        v_so_far += config->vertex_size*config->state_count(superp, i);
       }
     }
 
@@ -571,7 +571,7 @@ namespace x_lib {
       (*workers[0])();
     
       for(unsigned long i=1;i<config->processors;i++) {
-	thread_array[i]->join();
+        thread_array[i]->join();
       }
       shutdown_ioqs();
       struct rusage ru;
@@ -584,7 +584,7 @@ namespace x_lib {
       BOOST_LOG_TRIVIAL(info) << "CORE::RUSAGE::OUBLK " << ru.ru_oublock;
       BOOST_LOG_TRIVIAL(info) << "CORE::UTILS::BYTES_READ " << stat_bytes_read;
       BOOST_LOG_TRIVIAL(info) << "CORE::UTILS::BYTES_WRITTEN " <<
-	stat_bytes_written;
+        stat_bytes_written;
       io_wait_time.print("CORE::TIME::IO_WAIT");
     }
 
@@ -600,47 +600,47 @@ namespace x_lib {
 
     template<typename B, typename IN, typename OUT> friend 
     bool do_stream(streamIO<B> *sio,
-		   unsigned long superp,
-		   unsigned long stream_in,
-		   unsigned long stream_out,
-		   filter *override_input_filter,
-		   bool loopback);
+                   unsigned long superp,
+                   unsigned long stream_in,
+                   unsigned long stream_out,
+                   filter *override_input_filter,
+                   bool loopback);
     template<typename B> friend
     bool do_cpu(streamIO<B> *sio, unsigned long superp);
     template<typename B> friend
     void do_state_iter(streamIO<B> *sio, unsigned long superp);
     template<typename B> friend
     bool ingest(streamIO<B> *sio, 
-		unsigned long stream_in, 
-		ingest_t *ingest_segment);
+                unsigned long stream_in, 
+                ingest_t *ingest_segment);
     template<typename B> friend
     void merge_ingest(streamIO<B> *sio, unsigned long stream);
   };
   
-#define SETUP_STREAMOUT()					\
-  do {								\
-    work_item.bufm = sio->buffers;				\
-    if(stream_out != ULONG_MAX) {				\
-      work_item.stream_out = sio->buffers->get_buffer();	\
-      work_item.disk_stream_out = sio->streams[stream_out];	\
-      work_item.io_clock = &sio->io_wait_time;			\
-    }								\
-    else {							\
-      work_item.stream_out = NULL;				\
-      work_item.disk_stream_out = NULL;				\
-      work_item.io_clock = NULL;				\
-    }								\
-    sio->workers[0]->work_to_do = &work_item;			\
+#define SETUP_STREAMOUT()                                        \
+  do {                                                                \
+    work_item.bufm = sio->buffers;                                \
+    if(stream_out != ULONG_MAX) {                                \
+      work_item.stream_out = sio->buffers->get_buffer();        \
+      work_item.disk_stream_out = sio->streams[stream_out];        \
+      work_item.io_clock = &sio->io_wait_time;                        \
+    }                                                                \
+    else {                                                        \
+      work_item.stream_out = NULL;                                \
+      work_item.disk_stream_out = NULL;                                \
+      work_item.io_clock = NULL;                                \
+    }                                                                \
+    sio->workers[0]->work_to_do = &work_item;                        \
   }while(0)
 
 
   template<typename A, typename IN, typename OUT>
   static bool do_stream(streamIO<A> *sio,
-			unsigned long superp,
-			unsigned long stream_in,
-			unsigned long stream_out,
-			filter *override_input_filter,
-			bool loopback = false)
+                        unsigned long superp,
+                        unsigned long stream_in,
+                        unsigned long stream_out,
+                        filter *override_input_filter,
+                        bool loopback = false)
   {
     struct work<A, IN, OUT> work_item;
     bool reduce_result;
@@ -650,37 +650,37 @@ namespace x_lib {
     work_item.ingest   = NULL;
     if(stream_in != ULONG_MAX) {
       if(sio->ingest_buffers[stream_in] != NULL) {
-	work_item.ingest = sio->ingest_buffers[stream_in];
-	work_item.stream_in = sio->buffers->get_buffer();
-	work_item.input_filter = work_item.stream_in->work_queues;
-	SETUP_STREAMOUT();
-	(*sio->workers[0])();
-	work_item.stream_in->set_refcount(work_item.stream_in->get_refcount()-1);
+        work_item.ingest = sio->ingest_buffers[stream_in];
+        work_item.stream_in = sio->buffers->get_buffer();
+        work_item.input_filter = work_item.stream_in->work_queues;
+        SETUP_STREAMOUT();
+        (*sio->workers[0])();
+        work_item.stream_in->set_refcount(work_item.stream_in->get_refcount()-1);
       }
       while(!sio->streams[stream_in]->stream_eof(superp)) {
-	sio->io_wait_time.start();
-	work_item.stream_in = 
-	  sio->streams[stream_in]->read(superp);
-	sio->io_wait_time.stop();
-	if(override_input_filter != NULL) {
-	  work_item.input_filter = override_input_filter;
-	}
-	else {
-	  work_item.input_filter = work_item.stream_in->work_queues;
-	}
-	SETUP_STREAMOUT();
-	(*sio->workers[0])();
-	work_item.stream_in->set_refcount(work_item.stream_in->get_refcount()-1);
+        sio->io_wait_time.start();
+        work_item.stream_in = 
+          sio->streams[stream_in]->read(superp);
+        sio->io_wait_time.stop();
+        if(override_input_filter != NULL) {
+          work_item.input_filter = override_input_filter;
+        }
+        else {
+          work_item.input_filter = work_item.stream_in->work_queues;
+        }
+        SETUP_STREAMOUT();
+        (*sio->workers[0])();
+        work_item.stream_in->set_refcount(work_item.stream_in->get_refcount()-1);
       }
     }
     else {
       BOOST_ASSERT_MSG(override_input_filter != NULL,
-		       "Must have input stream or input filter !");
+                       "Must have input stream or input filter !");
       work_item.input_filter = override_input_filter;
       work_item.stream_in = NULL;
       work_item.bufm = sio->buffers;
       BOOST_ASSERT_MSG(stream_out != ULONG_MAX,
-		       "Must have input stream or output stream !");
+                       "Must have input stream or output stream !");
       work_item.stream_out = sio->buffers->get_buffer();
       work_item.disk_stream_out = sio->streams[stream_out];
       work_item.io_clock = &sio->io_wait_time;
@@ -689,7 +689,7 @@ namespace x_lib {
     }
     reduce_result =
       sio->cpu_state_array[0]->reduce(sio->cpu_state_array,
-				      sio->config->processors);
+                                      sio->config->processors);
     return reduce_result;
   }
 
@@ -735,7 +735,7 @@ namespace x_lib {
     (*sio->workers[0])();
     bool reduce_result =
       sio->cpu_state_array[0]->reduce(sio->cpu_state_array,
-				      sio->config->processors);
+                                      sio->config->processors);
     return reduce_result;
   }
   
@@ -752,8 +752,8 @@ namespace x_lib {
   // Returns true on eof
   template<typename A>
   static bool ingest(streamIO<A> *sio, 
-		     unsigned long stream, 
-		     ingest_t *ingest_segment)
+                     unsigned long stream, 
+                     ingest_t *ingest_segment)
   {
     while(ingest_segment->avail == 0 && !ingest_segment->eof);
     if(ingest_segment->eof) {

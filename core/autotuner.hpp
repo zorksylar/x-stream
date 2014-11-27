@@ -63,14 +63,14 @@ namespace x_lib {
       partition_shift = 0;
       unsigned long temp = cached_partitions - 1;
       while(temp) {
-	partition_shift++;
-	temp = temp >> 1;
+        partition_shift++;
+        temp = temp >> 1;
       }
       super_partition_shift = 0;
       temp = super_partitions - 1;
       while(temp) {
-	super_partition_shift++;
-	temp = temp >> 1;
+        super_partition_shift++;
+        temp = temp >> 1;
       }
     }
 
@@ -85,17 +85,17 @@ namespace x_lib {
     }
 
     unsigned long state_count(unsigned long superp, 
-			      unsigned long partition)
+                              unsigned long partition)
     {
       unsigned long base = (partition << super_partition_shift) | superp;
       unsigned long count = (vertices - 1) & 
-	~((1UL << (partition_shift + super_partition_shift)) - 1);
+        ~((1UL << (partition_shift + super_partition_shift)) - 1);
       BOOST_ASSERT_MSG((base & count) == 0, "Error in state count calculation");
       if((count | base) < vertices) {
-	count = count >> (partition_shift + super_partition_shift);
+        count = count >> (partition_shift + super_partition_shift);
       }
       else {
-	count = (count >> (partition_shift + super_partition_shift)) - 1;
+        count = (count >> (partition_shift + super_partition_shift)) - 1;
       }
       count++;
       return count;
@@ -109,7 +109,7 @@ namespace x_lib {
       // Align to DISK PAGE size
       vertex_state_buffer_size = vertex_state_buffer_size + DISK_PAGE_SIZE - 1;
       vertex_state_buffer_size =
-	(vertex_state_buffer_size/DISK_PAGE_SIZE)*DISK_PAGE_SIZE;
+        (vertex_state_buffer_size/DISK_PAGE_SIZE)*DISK_PAGE_SIZE;
       ram_budget += vertex_state_buffer_size;
       // Indexes [+1 for the aux]
       unsigned long aux_cnt = ((vm.count("qsort") > 0) ? 0:1);
@@ -136,27 +136,27 @@ namespace x_lib {
     {
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::PROCESSORS " << processors;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::PHYSICAL_MEMORY " <<
-	available_ram;
+        available_ram;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::VERTICES " << vertices;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::VERTEX_SIZE " << vertex_size;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::VERTEX_BUFFER " <<
-	vertex_state_buffer_size;
+        vertex_state_buffer_size;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::EDGES " << edges;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::PARTITIONS " <<
-	cached_partitions;
+        cached_partitions;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::FANOUT " << fanout;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::SUPER_PARTITIONS " << 
-	super_partitions;
+        super_partitions;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::STREAM_UNIT " << 
-	stream_unit;
+        stream_unit;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::BUFFER_SIZE " <<
        buffer_size;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::IO_NUMIOQS " <<
-	num_ioqs;
+        num_ioqs;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::MAX_BUFFERS " <<
-	max_buffers;
+        max_buffers;
       BOOST_LOG_TRIVIAL(info) << "CORE::CONFIG::MAX_STREAMS " <<
-	max_streams;
+        max_streams;
     }
 
     static unsigned long map_offset(unsigned long key)
@@ -175,12 +175,12 @@ namespace x_lib {
     }
     
     static unsigned long map_inverse(unsigned long super_partition,
-				     unsigned long partition,
-				     unsigned long offset)
+                                     unsigned long partition,
+                                     unsigned long offset)
     {
       return 
-	(((offset << partition_shift) | partition) << super_partition_shift)
-	| super_partition;
+        (((offset << partition_shift) | partition) << super_partition_shift)
+        | super_partition;
     }
 
     void set_cache(unsigned long partitions)
@@ -189,7 +189,7 @@ namespace x_lib {
       fanout = cached_partitions;
       unsigned long cache_lines = llc_size/llc_line_size;
       while(fanout > cache_lines) {
-	fanout = fanout/2;
+        fanout = fanout/2;
       }
     }
     
@@ -201,27 +201,27 @@ namespace x_lib {
       unsigned long vertices_per_partition = llc_size/vertex_footprint;
       partitions = 1;
       while((vertices_per_partition*partitions) < vertices) {
-	partitions = partitions*2;
+        partitions = partitions*2;
       }
       if(partitions < processors) {
-	partitions = processors;
+        partitions = processors;
       }
       // MM <-> Disk tuning
       unsigned long ram_budget;
       stream_unit = OPTIMUM_STREAM_UNIT;
       while(stream_unit > DISK_PAGE_SIZE) {
-	super_partitions = 1;
-	while(super_partitions <= partitions) {
-	  set_cache(partitions);
-	  ram_budget = calculate_ram_budget();
-	  if(ram_budget <= RAM_ADJUST*available_ram &&
-	     buffer_size >= stream_unit*super_partitions) {
-	    setup_mapping();
-	    return true;
-	  }
-	  super_partitions = super_partitions*2;
-	}
-	stream_unit = stream_unit/2;
+        super_partitions = 1;
+        while(super_partitions <= partitions) {
+          set_cache(partitions);
+          ram_budget = calculate_ram_budget();
+          if(ram_budget <= RAM_ADJUST*available_ram &&
+             buffer_size >= stream_unit*super_partitions) {
+            setup_mapping();
+            return true;
+          }
+          super_partitions = super_partitions*2;
+        }
+        stream_unit = stream_unit/2;
       }
       return false;
     }
@@ -235,8 +235,8 @@ namespace x_lib {
       stream_unit = OPTIMUM_STREAM_UNIT;
       unsigned long ram_budget = calculate_ram_budget();
       if(ram_budget > RAM_ADJUST*available_ram) {
-	BOOST_LOG_TRIVIAL(fatal) << "Too little physical memory, try autotune.";
-	exit(-1);
+        BOOST_LOG_TRIVIAL(fatal) << "Too little physical memory, try autotune.";
+        exit(-1);
       }
       setup_mapping();
     }
@@ -250,15 +250,15 @@ namespace x_lib {
       llc_line_size = vm["cpu_line_size"].as<unsigned long>();
       available_ram = vm["physical_memory"].as<unsigned long>();
       try {
-	num_ioqs = pt.get<unsigned long>("disk.count"); 
+        num_ioqs = pt.get<unsigned long>("disk.count"); 
       }
       catch (...) {
-	BOOST_LOG_TRIVIAL(warn) << 
-	  "Disk count not specified, assuming it to be 1";
-	num_ioqs = 1; 
+        BOOST_LOG_TRIVIAL(warn) << 
+          "Disk count not specified, assuming it to be 1";
+        num_ioqs = 1; 
       }
       if(vm["force_buffers"].as<unsigned long>() > 0) {
-	max_buffers = vm["force_buffers"].as<unsigned long>();
+        max_buffers = vm["force_buffers"].as<unsigned long>();
       }
     }
   };
@@ -269,7 +269,7 @@ namespace x_lib {
     static unsigned long map(unsigned long key) 
     {
       return (key >> configuration::super_partition_shift) & 
-	(configuration::cached_partitions - 1);
+        (configuration::cached_partitions - 1);
     }
   };
 

@@ -46,7 +46,7 @@ namespace x_lib {
        != 0) {
       errno = retcode;
       BOOST_LOG_TRIVIAL(warn) << "pthread_getschedparam failed:" <<
-	strerror(errno);
+        strerror(errno);
     }
     new_param = param;
     new_param.sched_priority = 1;
@@ -55,20 +55,20 @@ namespace x_lib {
        != 0) {
       errno = retcode;
       BOOST_LOG_TRIVIAL(warn) << "pthread_getschedparam failed:" <<
-	strerror(errno);
+        strerror(errno);
     }
     for(unsigned long i=0;i<config->num_ioqs;i++) {
       std::stringstream disk_mnt_pt;
       disk_mnt_pt << "disk.mnt" << i;
       const char *mtpt;
       try {
-	mtpt = pt.get<std::string>(disk_mnt_pt.str().c_str()).c_str();
+        mtpt = pt.get<std::string>(disk_mnt_pt.str().c_str()).c_str();
       }
       catch (...) {
-	BOOST_LOG_TRIVIAL(warn) << "No mount point specified for disk" << i
-				<< ", falling back to current directory";
-	mtpt = get_current_wd(); // Note memory will leak here but bounded by
-	                         // number of disks in use * wd string size
+        BOOST_LOG_TRIVIAL(warn) << "No mount point specified for disk" << i
+                                << ", falling back to current directory";
+        mtpt = get_current_wd(); // Note memory will leak here but bounded by
+                                 // number of disks in use * wd string size
       }
       disk_ioq_array[i] = new ioq(mtpt);
       disk_io *new_disk = new disk_io(config->stream_unit, disk_ioq_array[i]); 
@@ -79,7 +79,7 @@ namespace x_lib {
        != 0) {
       errno = retcode;
       BOOST_LOG_TRIVIAL(warn) << "pthread_getschedparam failed:" <<
-	strerror(errno);
+        strerror(errno);
     }
   }
   
@@ -94,7 +94,7 @@ namespace x_lib {
   void ioq::add_work(disk_stream *work)
   {
     BOOST_ASSERT_MSG(terminate == false, 
-		     "Adding work to terminated ioq !");
+                     "Adding work to terminated ioq !");
     boost::unique_lock<boost::mutex> lock(cond_lock);
     work->workq_next = queue;
     queue = work;
@@ -106,10 +106,10 @@ namespace x_lib {
     boost::unique_lock<boost::mutex> lock(cond_lock);
     do {
       if(queue == NULL && !terminate) {
-	cond_var.wait(lock);
+        cond_var.wait(lock);
       }
       else {
-	break;
+        break;
       }
     } while(1);
     disk_stream *work = queue;

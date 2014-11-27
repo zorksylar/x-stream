@@ -20,6 +20,19 @@ if want io to be compressed :
 sudo benchmark_driver -p 8 -a -b pagerank  --measure_scatter_gather --compressed_io -g twitter_rv --physical_memory 8589934592
 ````
 
+if want to specify mount point , add the following to .ini file : 
+````
+[disk]
+count=2
+mnt0=/mnt/disk0/soc-LiveJournal1-x
+mnt1=/mnt/disk1/soc-LiveJournal1-x
+````
+notice that soc-LiveJournal1-x is a directory containing the graph file.
+
+and in cmd line ,shold specefy the mapping from stream to disk number
+````
+--vertices_disk 0 --input_disk 0 --edges_disk 0 --updates0_disk 0 --updates1_disk 0 --output_disk 0
+````
 
 Notice : 
 * the .ini file, option <name> should be the name not abs path.

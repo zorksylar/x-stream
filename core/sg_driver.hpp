@@ -58,13 +58,13 @@ namespace algorithm {
     per_processor_data *algo_pcpu;
 
     bool reduce(per_processor_data **per_cpu_array,
-		unsigned long processors)
+                unsigned long processors)
     {
       if(algo_pcpu_array[0] != NULL && do_algo_reduce) {
-	return algo_pcpu_array[0]->reduce(algo_pcpu_array, processors);
+        return algo_pcpu_array[0]->reduce(algo_pcpu_array, processors);
       }
       else {
-	return false; // Should be don't care
+        return false; // Should be don't care
       }
     }
   } __attribute__((__aligned__(64)));
@@ -89,12 +89,12 @@ namespace algorithm {
   public:
     scatter_gather();
     static void partition_pre_callback(unsigned long super_partition,
-				       unsigned long partition,
-				       per_processor_data* cpu_state);
+                                       unsigned long partition,
+                                       per_processor_data* cpu_state);
     static void partition_callback(x_lib::stream_callback_state *state);
     static void partition_post_callback(unsigned long super_partition,
-					unsigned long partition,
-					per_processor_data *cpu_state);
+                                        unsigned long partition,
+                                        per_processor_data *cpu_state);
     void operator() ();
     static unsigned long max_streams()
     {
@@ -116,19 +116,19 @@ namespace algorithm {
     }
 
     static void state_iter_callback(unsigned long superp, 
-				    unsigned long partition,
-				    unsigned long index,
-				    unsigned char *vertex,
-				    per_processor_data *cpu_state)
+                                    unsigned long partition,
+                                    unsigned long index,
+                                    unsigned char *vertex,
+                                    per_processor_data *cpu_state)
     {
       unsigned long global_index = 
-	x_lib::configuration::map_inverse(superp, partition, index);
+        x_lib::configuration::map_inverse(superp, partition, index);
       sg_pcpu *pcpu = static_cast<sg_pcpu *>(cpu_state);
       bool will_scatter = A::init(vertex, global_index,
-				  sg_pcpu::bsp_phase,
-				  sg_pcpu::algo_pcpu_array[pcpu->processor_id]);
+                                  sg_pcpu::bsp_phase,
+                                  sg_pcpu::algo_pcpu_array[pcpu->processor_id]);
       if(will_scatter) {
-	sg_pcpu::scatter_filter->q(partition);
+        sg_pcpu::scatter_filter->q(partition);
       }
     }
 
@@ -142,16 +142,16 @@ namespace algorithm {
     {
       sg_pcpu *cpu = static_cast<sg_pcpu *>(cpu_state);
       if(sg_pcpu::current_step == superphase_begin) {
-	cpu->i_vote_to_stop = true;
+        cpu->i_vote_to_stop = true;
       }
       else if(sg_pcpu::current_step == phase_post_scatter) {
-	sg_pcpu::scatter_filter->done(cpu->processor_id);
+        sg_pcpu::scatter_filter->done(cpu->processor_id);
       }
       else if(sg_pcpu::current_step == phase_terminate) {
-	BOOST_LOG_TRIVIAL(info)<< "CORE::PARTITIONS_PROCESSED " << cpu->partitions_processed;
-	BOOST_LOG_TRIVIAL(info)<< "CORE::BYTES::EDGES_STREAMED " << cpu->edge_bytes_streamed;
-	BOOST_LOG_TRIVIAL(info)<< "CORE::BYTES::UPDATES_OUT " << cpu->update_bytes_out;
-	BOOST_LOG_TRIVIAL(info)<< "CORE::BYTES::UPDATES_IN " << cpu->update_bytes_in;
+        BOOST_LOG_TRIVIAL(info)<< "CORE::PARTITIONS_PROCESSED " << cpu->partitions_processed;
+        BOOST_LOG_TRIVIAL(info)<< "CORE::BYTES::EDGES_STREAMED " << cpu->edge_bytes_streamed;
+        BOOST_LOG_TRIVIAL(info)<< "CORE::BYTES::UPDATES_OUT " << cpu->update_bytes_out;
+        BOOST_LOG_TRIVIAL(info)<< "CORE::BYTES::UPDATES_IN " << cpu->update_bytes_in;
       }
     }
   };
@@ -183,39 +183,39 @@ namespace algorithm {
     graph_storage = new x_lib::streamIO<scatter_gather>();
     sg_pcpu::scatter_filter = new
       x_lib::filter(MAX(graph_storage->get_config()->cached_partitions,
-			graph_storage->get_config()->super_partitions),
-		    num_processors);
+                        graph_storage->get_config()->super_partitions),
+                    num_processors);
     sg_pcpu::bsp_phase = 0;
     vertex_stream = 
       graph_storage->open_stream("vertices", true, 
-				 vm["vertices_disk"].as<unsigned long>(),
-				 graph_storage->get_config()->vertex_size);
+                                 vm["vertices_disk"].as<unsigned long>(),
+                                 graph_storage->get_config()->vertex_size);
     if(graph_storage->get_config()->super_partitions == 1) {
       std::string efile = pt.get<std::string>("graph.name");
       edge_stream = 
-	graph_storage->open_stream((const char *)efile.c_str(), false,
-				   vm["input_disk"].as<unsigned long>(),
-				   F::split_size_bytes());
+        graph_storage->open_stream((const char *)efile.c_str(), false,
+                                   vm["input_disk"].as<unsigned long>(),
+                                   F::split_size_bytes());
     }
     else {
       edge_stream = 
-	graph_storage->open_stream("edges", true, 
-				   vm["edges_disk"].as<unsigned long>(),
-				   F::split_size_bytes());
+        graph_storage->open_stream("edges", true, 
+                                   vm["edges_disk"].as<unsigned long>(),
+                                   F::split_size_bytes());
       std::string efile = pt.get<std::string>("graph.name");
       init_stream = 
-	graph_storage->open_stream((const char *)efile.c_str(), false,
-				   vm["input_disk"].as<unsigned long>(),
-				   F::split_size_bytes(), 1);
+        graph_storage->open_stream((const char *)efile.c_str(), false,
+                                   vm["input_disk"].as<unsigned long>(),
+                                   F::split_size_bytes(), 1);
     }
     updates0_stream = 
       graph_storage->open_stream("updates0", true, 
-				 vm["updates0_disk"].as<unsigned long>(),
-				 A::split_size_bytes());
+                                 vm["updates0_disk"].as<unsigned long>(),
+                                 A::split_size_bytes());
     updates1_stream = 
       graph_storage->open_stream("updates1", true, 
-				 vm["updates1_disk"].as<unsigned long>(),
-				 A::split_size_bytes());
+                                 vm["updates1_disk"].as<unsigned long>(),
+                                 A::split_size_bytes());
     setup_time.stop();
   }
   
@@ -254,9 +254,9 @@ namespace algorithm {
     if(config->super_partitions > 1) {
       sg_pcpu::current_step = phase_edge_split;
       x_lib::do_stream< scatter_gather<A, F>, 
-			edge_type_wrapper<F>, 
-			edge_type_wrapper<F> >
-	(graph_storage, 0, init_stream, edge_stream, NULL);
+                        edge_type_wrapper<F>, 
+                        edge_type_wrapper<F> >
+        (graph_storage, 0, init_stream, edge_stream, NULL);
       graph_storage->close_stream(init_stream);
     }
     // Supersteps
@@ -269,81 +269,81 @@ namespace algorithm {
       unsigned long updates_out_stream = (PHASE == 0 ? updates0_stream:updates1_stream);
       graph_storage->rewind_stream(edge_stream);
       for(unsigned long i=0;i<graph_storage->get_config()->super_partitions;i++) {
-	if(graph_storage->get_config()->super_partitions > 1) {
-	  if(sg_pcpu::bsp_phase > 0) {
-	    graph_storage->state_load(vertex_stream, i);
-	  }
-	  graph_storage->state_prepare(i);
-	}
-	else if(sg_pcpu::bsp_phase == 0) {
-	  graph_storage->state_prepare(0);
-	}
-	if(A::need_init(sg_pcpu::bsp_phase)) {
-	  if(measure_scatter_gather) {
-	    state_iter_cost.start();
-	  }
-	  x_lib::do_state_iter<scatter_gather<A, F> > (graph_storage, i);
-	  if(measure_scatter_gather) {
-	    state_iter_cost.stop();
-	  }
-	}
-	sg_pcpu::current_step = phase_gather;
-	if(measure_scatter_gather) {
-	    gather_cost.start();
-	}
-	x_lib::do_stream<scatter_gather<A, F>, 
-			 update_type_wrapper<A>,
-			 update_type_wrapper<A> >
-	  (graph_storage, i, updates_in_stream, ULONG_MAX, NULL);
-	if(measure_scatter_gather) {
-	  gather_cost.stop();
-	}
-	graph_storage->reset_stream(updates_in_stream, i);
-	sg_pcpu::current_step = phase_scatter;
-	x_lib::do_cpu<scatter_gather<A, F> >(graph_storage, i);
-	if(measure_scatter_gather) {
-	  scatter_cost.start();
-	}
-	x_lib::do_stream<scatter_gather<A, F>, 
-			 edge_type_wrapper<F>,
-			 update_type_wrapper<A> >
-	  (graph_storage, i, edge_stream, updates_out_stream, sg_pcpu::scatter_filter);
-	if(measure_scatter_gather) {
-	  scatter_cost.stop();
-	}
-	sg_pcpu::current_step = phase_post_scatter;
-	if(i == (graph_storage->get_config()->super_partitions - 1)) {
-	  sg_pcpu::do_algo_reduce = true;
-	}
-	global_stop = x_lib::do_cpu<scatter_gather<A, F> >(graph_storage, i);
-	sg_pcpu::do_algo_reduce = false;
-	if(graph_storage->get_config()->super_partitions > 1) {
-	  graph_storage->state_store(vertex_stream, i);
-	}
+        if(graph_storage->get_config()->super_partitions > 1) {
+          if(sg_pcpu::bsp_phase > 0) {
+            graph_storage->state_load(vertex_stream, i);
+          }
+          graph_storage->state_prepare(i);
+        }
+        else if(sg_pcpu::bsp_phase == 0) {
+          graph_storage->state_prepare(0);
+        }
+        if(A::need_init(sg_pcpu::bsp_phase)) {
+          if(measure_scatter_gather) {
+            state_iter_cost.start();
+          }
+          x_lib::do_state_iter<scatter_gather<A, F> > (graph_storage, i);
+          if(measure_scatter_gather) {
+            state_iter_cost.stop();
+          }
+        }
+        sg_pcpu::current_step = phase_gather;
+        if(measure_scatter_gather) {
+            gather_cost.start();
+        }
+        x_lib::do_stream<scatter_gather<A, F>, 
+                         update_type_wrapper<A>,
+                         update_type_wrapper<A> >
+          (graph_storage, i, updates_in_stream, ULONG_MAX, NULL);
+        if(measure_scatter_gather) {
+          gather_cost.stop();
+        }
+        graph_storage->reset_stream(updates_in_stream, i);
+        sg_pcpu::current_step = phase_scatter;
+        x_lib::do_cpu<scatter_gather<A, F> >(graph_storage, i);
+        if(measure_scatter_gather) {
+          scatter_cost.start();
+        }
+        x_lib::do_stream<scatter_gather<A, F>, 
+                         edge_type_wrapper<F>,
+                         update_type_wrapper<A> >
+          (graph_storage, i, edge_stream, updates_out_stream, sg_pcpu::scatter_filter);
+        if(measure_scatter_gather) {
+          scatter_cost.stop();
+        }
+        sg_pcpu::current_step = phase_post_scatter;
+        if(i == (graph_storage->get_config()->super_partitions - 1)) {
+          sg_pcpu::do_algo_reduce = true;
+        }
+        global_stop = x_lib::do_cpu<scatter_gather<A, F> >(graph_storage, i);
+        sg_pcpu::do_algo_reduce = false;
+        if(graph_storage->get_config()->super_partitions > 1) {
+          graph_storage->state_store(vertex_stream, i);
+        }
       }
       graph_storage->rewind_stream(updates_out_stream);
       if(graph_storage->get_config()->super_partitions > 1) {
-	graph_storage->rewind_stream(vertex_stream);
+        graph_storage->rewind_stream(vertex_stream);
       }
       unsigned long no_voter;
       PHASE = 1 - PHASE;
       sg_pcpu::bsp_phase++;
       if(heartbeat) {
-	BOOST_LOG_TRIVIAL(info) << clock::timestamp() << " Completed phase " <<
-	  sg_pcpu::bsp_phase;
+        BOOST_LOG_TRIVIAL(info) << clock::timestamp() << " Completed phase " <<
+          sg_pcpu::bsp_phase;
       }
       if(sg_pcpu::bsp_phase > A::min_super_phases()) {
-	if(global_stop) {
-	  break;
-	}
-	for(no_voter=0;no_voter<graph_storage->get_config()->processors;no_voter++) {
-	  if(!pcpu_array[no_voter]->i_vote_to_stop) {
-	    break;
-	  }
-	}
-      	if((no_voter == graph_storage->get_config()->processors)){
-	  break;
-	}
+        if(global_stop) {
+          break;
+        }
+        for(no_voter=0;no_voter<graph_storage->get_config()->processors;no_voter++) {
+          if(!pcpu_array[no_voter]->i_vote_to_stop) {
+            break;
+          }
+        }
+              if((no_voter == graph_storage->get_config()->processors)){
+          break;
+        }
       }
     }
     if(graph_storage->get_config()->super_partitions == 1) {
@@ -368,8 +368,8 @@ namespace algorithm {
 
   template<typename A, typename F>
   void scatter_gather<A, F>::partition_pre_callback(unsigned long superp, 
-						    unsigned long partition,
-						    per_processor_data *pcpu)
+                                                    unsigned long partition,
+                                                    per_processor_data *pcpu)
   {
     sg_pcpu *pcpu_actual = static_cast<sg_pcpu *>(pcpu);
     if(pcpu_actual->current_step == phase_gather) {
@@ -386,8 +386,8 @@ namespace algorithm {
     switch(sg_pcpu::current_step) {
     case phase_edge_split: {
       unsigned long bytes_to_copy = 
-	(callback->bytes_in < callback->bytes_out_max) ?
-	callback->bytes_in:callback->bytes_out_max;
+        (callback->bytes_in < callback->bytes_out_max) ?
+        callback->bytes_in:callback->bytes_out_max;
       callback->bytes_in -= bytes_to_copy;
       memcpy(callback->bufout, callback->bufin, bytes_to_copy);
       callback->bufin += bytes_to_copy;
@@ -397,15 +397,15 @@ namespace algorithm {
     case phase_gather: {
       pcpu->update_bytes_in += callback->bytes_in;
       while(callback->bytes_in) {
-	bool activate = 
-	  A::apply_one_update(callback->state,
-			      callback->bufin,
-			      sg_pcpu::algo_pcpu_array[pcpu->processor_id],
-			      pcpu->bsp_phase);
-	callback->bufin += A::split_size_bytes();
-	callback->bytes_in -= A::split_size_bytes();
-	pcpu->activate_partition_for_scatter |= activate;
-	pcpu->i_vote_to_stop = pcpu->i_vote_to_stop && !activate;
+        bool activate = 
+          A::apply_one_update(callback->state,
+                              callback->bufin,
+                              sg_pcpu::algo_pcpu_array[pcpu->processor_id],
+                              pcpu->bsp_phase);
+        callback->bufin += A::split_size_bytes();
+        callback->bytes_in -= A::split_size_bytes();
+        pcpu->activate_partition_for_scatter |= activate;
+        pcpu->i_vote_to_stop = pcpu->i_vote_to_stop && !activate;
       }
       break;
     }
@@ -413,21 +413,21 @@ namespace algorithm {
       unsigned long tmp = callback->bytes_in;
       unsigned char *bufout = callback->bufout;
       while(callback->bytes_in) {
-	if((callback->bytes_out + A::split_size_bytes()) >
-	   callback->bytes_out_max) {
-	  break;
-	}
-	bool up = A::generate_update(callback->state,
-				     callback->bufin, 
-				     bufout,
-				     sg_pcpu::algo_pcpu_array[pcpu->processor_id],
-				     sg_pcpu::bsp_phase);
-	callback->bufin    += F::split_size_bytes();
-	callback->bytes_in -= F::split_size_bytes();
-	if(up) {
-	  callback->bytes_out += A::split_size_bytes();
-	  bufout += A::split_size_bytes();
-	}
+        if((callback->bytes_out + A::split_size_bytes()) >
+           callback->bytes_out_max) {
+          break;
+        }
+        bool up = A::generate_update(callback->state,
+                                     callback->bufin, 
+                                     bufout,
+                                     sg_pcpu::algo_pcpu_array[pcpu->processor_id],
+                                     sg_pcpu::bsp_phase);
+        callback->bufin    += F::split_size_bytes();
+        callback->bytes_in -= F::split_size_bytes();
+        if(up) {
+          callback->bytes_out += A::split_size_bytes();
+          bufout += A::split_size_bytes();
+        }
       }
       pcpu->update_bytes_out    += callback->bytes_out;
       pcpu->edge_bytes_streamed += (tmp - callback->bytes_in); 
@@ -441,13 +441,13 @@ namespace algorithm {
 
   template<typename A, typename F>
   void scatter_gather<A, F>::partition_post_callback(unsigned long superp, 
-						     unsigned long partition,
-						     per_processor_data *pcpu)
+                                                     unsigned long partition,
+                                                     per_processor_data *pcpu)
   {
     sg_pcpu *pcpu_actual = static_cast<sg_pcpu *>(pcpu);
     if(pcpu_actual->current_step == phase_gather) {
       if(pcpu_actual->activate_partition_for_scatter) {
-	sg_pcpu::scatter_filter->q(partition);
+        sg_pcpu::scatter_filter->q(partition);
       }
       pcpu_actual->partitions_processed++;
     }
